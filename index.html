@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bodega Master - Construction Inventory System</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .print-only { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            #view-inventory table th:nth-child(5),
+            #view-inventory table th:nth-child(6),
+            #view-inventory table td:nth-child(5),
+            #view-inventory table td:nth-child(6) {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- TOP NAV BAR -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 no-print flex items-center justify-between px-6 py-3 shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-500 p-2 rounded-lg text-slate-950 font-bold">
+                <i data-lucide="warehouse" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide uppercase text-amber-400">BODEGAPRO</h1>
+                <p class="text-xs text-slate-400">Construction Warehouse Inventory Management System</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <button onclick="resetSampleData()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 inline mr-1"></i> Reset Sample Data
+            </button>
+            <div class="text-right border-l border-slate-700 pl-4 text-xs text-slate-400">
+                <span id="liveClock" class="font-mono text-amber-400 font-semibold"></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between no-print shadow-xl">
+            <nav class="p-4 space-y-1">
+                <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Menu</div>
+                
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition bg-amber-500 text-slate-950 font-semibold">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </button>
+
+                <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <i data-lucide="boxes" class="w-5 h-5"></i>
+                    <span>Master Inventory</span>
+                </button>
+
+                <!-- LOW STOCK ALERT TAB -->
+                <button onclick="switchTab('alerts')" id="nav-alerts" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i>
+                        <span>Low Stock Alert</span>
+                    </div>
+                    <span id="alert-badge" class="bg-slate-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+
+                <button onclick="switchTab('stockin')" id="nav-stockin" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <i data-lucide="arrow-down-to-line" class="w-5 h-5 text-emerald-400"></i>
+                    <span>Stock-In (Deliveries)</span>
+                </button>
+
+                <button onclick="switchTab('stockout')" id="nav-stockout" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <i data-lucide="arrow-up-from-line" class="w-5 h-5 text-rose-400"></i>
+                    <span>Stock-Out (Site Req.)</span>
+                </button>
+
+                <button onclick="switchTab('tools')" id="nav-tools" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <i data-lucide="wrench" class="w-5 h-5 text-sky-400"></i>
+                    <span>Tools & Equipment</span>
+                </button>
+
+                <div class="px-3 pt-6 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Reports & Logs</div>
+
+                <button onclick="switchTab('logs')" id="nav-logs" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <i data-lucide="history" class="w-5 h-5"></i>
+                    <span>Transaction History</span>
+                </button>
+            </nav>
+
+            <div class="p-4 bg-slate-950/60 border-t border-slate-800 text-xs text-slate-400">
+                <div class="flex items-center justify-between mb-1">
+                    <span>Bodega Status:</span>
+                    <span class="inline-flex items-center text-emerald-400 font-medium">● Open</span>
+                </div>
+                <p class="font-semibold text-slate-300">Central Warehouse Yard</p>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto p-6">
+            
+            <!-- VIEW: DASHBOARD -->
+            <section id="view-dashboard" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Bodega Executive Dashboard</h2>
+                        <p class="text-slate-500 text-sm">Real-time materials summary and site distribution.</p>
+                    </div>
+                </div>
+
+                <!-- METRIC CARDS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Material SKUs</p>
+                            <h3 id="dash-total-skus" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                            <p class="text-xs text-slate-400 mt-1">Active items registered</p>
+                        </div>
+                        <div class="bg-slate-100 p-3.5 rounded-xl text-slate-700">
+                            <i data-lucide="package" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Stock Quantities</p>
+                            <h3 id="dash-total-qty" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                            <p class="text-xs text-slate-400 mt-1">Across all inventory</p>
+                        </div>
+                        <div class="bg-amber-100 p-3.5 rounded-xl text-amber-700">
+                            <i data-lucide="layers" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Currently Borrowed Tools</p>
+                            <h3 id="dash-borrowed-tools" class="text-3xl font-bold text-sky-600 mt-1">0</h3>
+                            <p class="text-xs text-slate-400 mt-1">Active site loans</p>
+                        </div>
+                        <div class="bg-sky-100 p-3.5 rounded-xl text-sky-700">
+                            <i data-lucide="hammer" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECENT TRANSACTIONS TABLE SUMMARY -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 text-lg flex items-center">
+                            <i data-lucide="activity" class="w-5 h-5 mr-2 text-amber-500"></i> Recent Movements
+                        </h3>
+                        <button onclick="switchTab('logs')" class="text-xs font-semibold text-amber-600 hover:underline">View All Logs →</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase text-xs font-semibold border-b">
+                                <tr>
+                                    <th class="p-3">Date & Time</th>
+                                    <th class="p-3">Type</th>
+                                    <th class="p-3">Material / Item</th>
+                                    <th class="p-3">Qty</th>
+                                    <th class="p-3">Unit</th>
+                                    <th class="p-3 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-recent-logs" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: MASTER INVENTORY -->
+            <section id="view-inventory" class="space-y-6 hidden">
+                <!-- PRINT ONLY TITLE -->
+                <div class="print-only mb-4">
+                    <h1 class="text-2xl font-bold text-black">Materials Inventory</h1>
+                </div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Master Construction Inventory</h2>
+                        <p class="text-slate-500 text-sm">Full stock list of warehouse construction materials.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <!-- CATEGORY FILTER DROPDOWN IN MASTER INVENTORY HEADER -->
+                        <select id="inv-category-filter" onchange="renderInventoryTable()" class="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="ALL">All Categories</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Modular">Modular</option>
+                            <option value="Finishing">Finishing</option>
+                            <option value="Painting">Painting</option>
+                        </select>
+
+                        <button onclick="openAddItemModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm transition">
+                            <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> + New Item
+                        </button>
+                        <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3.5 py-2 rounded-lg text-sm flex items-center transition">
+                            <i data-lucide="printer" class="w-4 h-4 mr-1.5"></i> Print List
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTROLS & FILTERS -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 no-print">
+                    <div class="relative flex-1 w-full">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="inv-search" onkeyup="renderInventoryTable()" placeholder="Search SKU, Item Name..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+
+                <!-- INVENTORY TABLE -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-900 text-white uppercase text-xs font-semibold">
+                                <tr>
+                                    <th class="p-3.5">SKU / CODE</th>
+                                    <th class="p-3.5">ITEM DESCRIPTION</th>
+                                    <th class="p-3.5">STOCK</th>
+                                    <th class="p-3.5">UNIT</th>
+                                    <th class="p-3.5 text-center">ACTIONS</th>
+                                    <th class="p-3.5 text-center">RE-STOCK</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-tbody" class="divide-y divide-slate-200">
+                                <!-- Dynamic Render -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: LOW STOCK ALERT SECTION -->
+            <section id="view-alerts" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-rose-600 flex items-center">
+                            <i data-lucide="alert-triangle" class="w-7 h-7 mr-2"></i> Critical & Out of Stock Materials
+                        </h2>
+                        <p class="text-slate-500 text-sm">Materials currently at zero stock requiring immediate replenishment.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-rose-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-rose-950 text-white uppercase text-xs font-semibold">
+                                <tr>
+                                    <th class="p-3.5">SKU / Code</th>
+                                    <th class="p-3.5">Item Description</th>
+                                    <th class="p-3.5">Current Stock</th>
+                                    <th class="p-3.5">Unit</th>
+                                    <th class="p-3.5 text-center">Quick Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerts-tbody" class="divide-y divide-rose-100">
+                                <!-- Dynamic Render -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: STOCK-IN -->
+            <section id="view-stockin" class="space-y-6 hidden">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Stock-In (Supplier Deliveries)</h2>
+                    <p class="text-slate-500 text-sm">Record incoming material shipments and add items into warehouse stock.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-1 space-y-4">
+                        <h3 class="font-bold text-slate-800 text-lg border-b pb-2 flex items-center">
+                            <i data-lucide="truck" class="w-5 h-5 mr-2 text-emerald-600"></i> New Delivery Entry
+                        </h3>
+                        <form id="form-stock-in" onsubmit="handleStockIn(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Select / Type Item</label>
+                                <input type="text" id="stockin-item-input" list="stockin-item-options" oninput="onStockInItemSelect()" required placeholder="Search or type item name..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                                <datalist id="stockin-item-options">
+                                    <!-- Options populated by JS -->
+                                </datalist>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
+                                <select id="stockin-category" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                                    <option value="Plumbing">Plumbing</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Modular">Modular</option>
+                                    <option value="Finishing">Finishing</option>
+                                    <option value="Painting">Painting</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Quantity Received</label>
+                                <input type="number" min="1" id="stockin-qty" required placeholder="e.g. 50" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Unit</label>
+                                <input type="text" id="stockin-unit" required placeholder="e.g. Pail, Pcs, Roll, Box" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition">
+                                Record Stock-In
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Recent Stock-In Logs</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-semibold border-b">
+                                    <tr>
+                                        <th class="p-3">Date</th>
+                                        <th class="p-3">Item</th>
+                                        <th class="p-3">Qty Added</th>
+                                        <th class="p-3">Unit</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockin-logs-tbody" class="divide-y divide-slate-100">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: STOCK-OUT -->
+            <section id="view-stockout" class="space-y-6 hidden">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Stock-Out (Material Requisition)</h2>
+                    <p class="text-slate-500 text-sm">Issue materials to project sites and update remaining stock balance.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-1 space-y-4">
+                        <h3 class="font-bold text-slate-800 text-lg border-b pb-2 flex items-center">
+                            <i data-lucide="clipboard-list" class="w-5 h-5 mr-2 text-rose-600"></i> Material Requisition Slip (MRS)
+                        </h3>
+                        <form id="form-stock-out" onsubmit="handleStockOut(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Select Item</label>
+                                <select id="stockout-item-select" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-rose-500 outline-none">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Quantity to Issue</label>
+                                <input type="number" min="1" id="stockout-qty" required placeholder="e.g. 20" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Target Project Site / Location</label>
+                                <input type="text" id="stockout-site" required placeholder="e.g. Block 4 Lot 12 - Site A" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Requested By (Foreman/Engineer)</label>
+                                <input type="text" id="stockout-requestedby" required placeholder="e.g. Engr. Santos / Foreman Ace" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+                            </div>
+                            <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-lg shadow transition">
+                                Issue Material (Stock-Out)
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Recent Site Requisitions</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-semibold border-b">
+                                    <tr>
+                                        <th class="p-3">Date</th>
+                                        <th class="p-3">Item</th>
+                                        <th class="p-3">Qty Issued</th>
+                                        <th class="p-3">Project Site</th>
+                                        <th class="p-3">Requested By</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockout-logs-tbody" class="divide-y divide-slate-100">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: TOOLS & EQUIPMENT -->
+            <section id="view-tools" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Tools & Reusable Equipment Tracker</h2>
+                        <p class="text-slate-500 text-sm">Monitor borrowed power tools, scaffolding, and machinery.</p>
+                    </div>
+                    <button onclick="openModal('modal-add-tool')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm">
+                        <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Register New Tool
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-900 text-white uppercase text-xs font-semibold">
+                                <tr>
+                                    <th class="p-3.5">Tool Code</th>
+                                    <th class="p-3.5">Equipment Name / Spec</th>
+                                    <th class="p-3.5">Total Quantity</th>
+                                    <th class="p-3.5">Available In Bodega</th>
+                                    <th class="p-3.5">Borrowed Out</th>
+                                    <th class="p-3.5 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tools-tbody" class="divide-y divide-slate-200">
+                                <!-- Dynamic Render -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: TRANSACTION HISTORY -->
+            <section id="view-logs" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Audit & Transaction Logs</h2>
+                        <p class="text-slate-500 text-sm">Complete history log of all Stock-In, Stock-Out, and Tool transactions.</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Audit Log
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-900 text-white uppercase text-xs font-semibold">
+                                <tr>
+                                    <th class="p-3.5">Timestamp</th>
+                                    <th class="p-3.5">Action Type</th>
+                                    <th class="p-3.5">Item Name</th>
+                                    <th class="p-3.5">Quantity</th>
+                                    <th class="p-3.5">Unit</th>
+                                    <th class="p-3.5 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-logs-tbody" class="divide-y divide-slate-200">
+                                <!-- Dynamic Render -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: ADD NEW ITEM -->
+    <div id="modal-add-item" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Add New Material SKU</h3>
+            <form onsubmit="handleAddNewItem(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">SKU / Code (Auto-Generated)</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="add-sku" required readonly class="w-full border rounded-lg p-2 text-sm bg-slate-100 font-mono font-bold text-amber-600 outline-none">
+                        <button type="button" onclick="generateAutoSKU()" title="Regenerate Code" class="p-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Item Description</label>
+                    <input type="text" id="add-name" required placeholder="e.g. Sealant 300ml" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
+                    <select id="add-category" required class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-white">
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Modular">Modular</option>
+                        <option value="Finishing">Finishing</option>
+                        <option value="Painting">Painting</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Initial Stock Qty</label>
+                        <input type="number" min="0" id="add-stock" required value="0" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Unit of Measure</label>
+                        <input type="text" id="add-unit" required placeholder="e.g. PCS, Pail, Box" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="closeModal('modal-add-item')" class="px-4 py-2 text-sm text-slate-600 font-medium">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 font-bold text-slate-950 rounded-lg text-sm hover:bg-amber-600 shadow">Save Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT ITEM -->
+    <div id="modal-edit-item" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Edit Material Details</h3>
+            <form onsubmit="handleSaveEditItem(event)" class="space-y-3">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">SKU / Code</label>
+                    <input type="text" id="edit-sku" required class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Item Description</label>
+                    <input type="text" id="edit-name" required class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
+                    <select id="edit-category" required class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-white">
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Modular">Modular</option>
+                        <option value="Finishing">Finishing</option>
+                        <option value="Painting">Painting</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Current Stock Qty</label>
+                        <input type="number" min="0" id="edit-stock" required class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Unit of Measure</label>
+                        <input type="text" id="edit-unit" required class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="closeModal('modal-edit-item')" class="px-4 py-2 text-sm text-slate-600 font-medium">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 font-bold text-slate-950 rounded-lg text-sm hover:bg-amber-600 shadow">Update Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD TOOL -->
+    <div id="modal-add-tool" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Register Equipment / Tool</h3>
+            <form onsubmit="handleAddNewTool(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tool Code / Serial Tag</label>
+                    <input type="text" id="add-tool-code" required placeholder="e.g. TL-JACK-01" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Equipment Name</label>
+                    <input type="text" id="add-tool-name" required placeholder="e.g. Heavy Duty Demolition Jackhammer" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Total Quantity Owned</label>
+                    <input type="number" min="1" id="add-tool-qty" required value="1" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="closeModal('modal-add-tool')" class="px-4 py-2 text-sm text-slate-600 font-medium">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-sky-600 font-bold text-white rounded-lg text-sm hover:bg-sky-700 shadow">Save Tool</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Sample Initial Data with Category
+        const defaultInventory = [
+            { id: 1, sku: 'MAT-GEN-101', name: 'SEALANT 300ML', category: 'Finishing', stock: 20, unit: 'PCS' },
+            { id: 2, sku: 'MAT-GEN-102', name: 'Marine Plywood 3/4" x 4x8', category: 'Modular', stock: 0, unit: 'Pcs' },
+            { id: 3, sku: 'MAT-GEN-103', name: 'THHN Electrical Wire 3.5mm²', category: 'Electrical', stock: 0, unit: 'Roll' }
+        ];
+
+        const defaultTools = [
+            { id: 1, code: 'EQ-01', name: 'H-Frame Scaffolding Set', total: 50, available: 30, borrowed: 20 },
+            { id: 2, code: 'EQ-02', name: 'Demolition Breaker / Jackhammer', total: 4, available: 2, borrowed: 2 }
+        ];
+
+        const defaultLogs = [
+            { id: 1, timestamp: '2026-11-04 09:15 AM', type: 'Stock-In', item: 'SEALANT 300ML', qty: 20, unit: 'PCS' }
+        ];
+
+        // Global State variables
+        let inventory = JSON.parse(localStorage.getItem('bodega_inventory')) || defaultInventory;
+        let tools = JSON.parse(localStorage.getItem('bodega_tools')) || defaultTools;
+        let logs = JSON.parse(localStorage.getItem('bodega_logs')) || defaultLogs;
+
+        // Init App
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderDashboard();
+            renderInventoryTable();
+            renderToolsTable();
+            populateSelectOptions();
+            renderLogsTable();
+            updateAlertBadge();
+        });
+
+        function saveData() {
+            localStorage.setItem('bodega_inventory', JSON.stringify(inventory));
+            localStorage.setItem('bodega_tools', JSON.stringify(tools));
+            localStorage.setItem('bodega_logs', JSON.stringify(logs));
+            updateAlertBadge();
+        }
+
+        function updateAlertBadge() {
+            const zeroStockItems = inventory.filter(i => Number(i.stock) <= 0);
+            const badge = document.getElementById('alert-badge');
+            badge.innerText = zeroStockItems.length;
+            if(zeroStockItems.length > 0) {
+                badge.classList.remove('bg-slate-700');
+                badge.classList.add('bg-rose-600');
+            } else {
+                badge.classList.remove('bg-rose-600');
+                badge.classList.add('bg-slate-700');
+            }
+        }
+
+        function resetSampleData() {
+            if(confirm("Are you sure you want to reset all inventory and logs to sample data?")) {
+                localStorage.clear();
+                inventory = defaultInventory;
+                tools = defaultTools;
+                logs = defaultLogs;
+                saveData();
+                location.reload();
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+        }
+
+        // NAVIGATION TAB SWITCHER
+        function switchTab(tabName) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-amber-500', 'text-slate-950', 'font-semibold');
+                btn.classList.add('hover:bg-slate-800', 'hover:text-white');
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            activeBtn.classList.add('bg-amber-500', 'text-slate-950', 'font-semibold');
+            
+            if(tabName === 'dashboard') renderDashboard();
+            if(tabName === 'inventory') renderInventoryTable();
+            if(tabName === 'alerts') renderAlertsTable();
+            if(tabName === 'tools') renderToolsTable();
+            if(tabName === 'stockin' || tabName === 'stockout') populateSelectOptions();
+            if(tabName === 'logs') renderLogsTable();
+        }
+
+        // AUTO SKU GENERATOR
+        function generateAutoSKU() {
+            const randomNum = Math.floor(100 + Math.random() * 900);
+            document.getElementById('add-sku').value = 'MAT-GEN-' + randomNum;
+        }
+
+        // MODAL HANDLERS
+        function openAddItemModal() {
+            generateAutoSKU();
+            openModal('modal-add-item');
+        }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // DASHBOARD RENDER
+        function renderDashboard() {
+            document.getElementById('dash-total-skus').innerText = inventory.length;
+            document.getElementById('dash-total-qty').innerText = inventory.reduce((acc, curr) => acc + Number(curr.stock || 0), 0);
+            document.getElementById('dash-borrowed-tools').innerText = tools.reduce((acc, curr) => acc + Number(curr.borrowed || 0), 0);
+
+            const recentTbody = document.getElementById('dash-recent-logs');
+            if(logs.length === 0) {
+                recentTbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No recent movements recorded.</td></tr>`;
+                return;
+            }
+            recentTbody.innerHTML = logs.slice(0, 5).map(log => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 text-xs text-slate-500">${log.timestamp}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold ${log.type === 'Stock-In' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                            ${log.type}
+                        </span>
+                    </td>
+                    <td class="p-3 font-medium text-slate-800">${log.item}</td>
+                    <td class="p-3 font-semibold">${log.qty}</td>
+                    <td class="p-3 text-xs text-slate-500">${log.unit || '-'}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteLogEntry(${log.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded text-xs border border-rose-200">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // RENDER MASTER INVENTORY
+        function renderInventoryTable() {
+            const searchVal = document.getElementById('inv-search').value.toLowerCase();
+            const selectedCat = document.getElementById('inv-category-filter').value;
+
+            const filtered = inventory.filter(item => {
+                const matchesSearch = item.sku.toLowerCase().includes(searchVal) || 
+                                      item.name.toLowerCase().includes(searchVal);
+                
+                const matchesCat = (selectedCat === 'ALL') || (item.category === selectedCat);
+
+                return matchesSearch && matchesCat;
+            });
+
+            const tbody = document.getElementById('inventory-tbody');
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No materials match your filter criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100 ${item.stock === 0 ? 'bg-rose-50/40' : ''}">
+                    <td class="p-3.5 font-mono text-xs font-bold text-amber-600">${item.sku}</td>
+                    <td class="p-3.5 font-semibold text-slate-800">${item.name}</td>
+                    <td class="p-3.5 font-bold text-base ${item.stock === 0 ? 'text-rose-600' : 'text-slate-800'}">${item.stock}</td>
+                    <td class="p-3.5 text-xs text-slate-500">${item.unit}</td>
+                    <td class="p-3.5 text-center space-x-2">
+                        <button onclick="openEditModal(${item.id})" class="bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-700 px-2.5 py-1 rounded text-xs font-bold transition inline-flex items-center border border-slate-300">
+                            <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Edit
+                        </button>
+                        <button onclick="deleteInventoryItem(${item.id})" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded text-xs font-bold transition inline-flex items-center border border-rose-200">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Delete
+                        </button>
+                    </td>
+                    <td class="p-3.5 text-center">
+                        <div class="inline-flex items-center space-x-1">
+                            <button onclick="quickAdjustStock(${item.id}, -1)" title="Minus 1" class="w-7 h-7 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-lg text-sm flex items-center justify-center transition shadow-sm">-</button>
+                            <button onclick="customReStock(${item.id})" title="Custom Re-Stock Quantity" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition shadow-sm">+ Add</button>
+                            <button onclick="quickAdjustStock(${item.id}, 1)" title="Plus 1" class="w-7 h-7 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-sm flex items-center justify-center transition shadow-sm">+</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // RENDER LOW STOCK ALERTS TABLE
+        function renderAlertsTable() {
+            const zeroStockItems = inventory.filter(i => Number(i.stock) <= 0);
+            const tbody = document.getElementById('alerts-tbody');
+
+            if(zeroStockItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-emerald-600 font-medium">✓ Excellent! There are currently no out-of-stock materials.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = zeroStockItems.map(item => `
+                <tr class="hover:bg-rose-100/50 transition">
+                    <td class="p-3.5 font-mono text-xs font-bold text-rose-600">${item.sku}</td>
+                    <td class="p-3.5 font-semibold text-slate-800">${item.name}</td>
+                    <td class="p-3.5 font-bold text-base text-rose-600">0</td>
+                    <td class="p-3.5 text-xs text-slate-500">${item.unit}</td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="customReStock(${item.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-sm inline-flex items-center">
+                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Re-Stock Now
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function quickAdjustStock(id, delta) {
+            const item = inventory.find(i => i.id === id);
+            if(item) {
+                if(delta < 0 && item.stock <= 0) {
+                    alert("Stock for this material is already zero!");
+                    return;
+                }
+                item.stock += delta;
+                logs.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    type: delta > 0 ? 'Stock-In' : 'Stock-Out',
+                    item: item.name,
+                    qty: Math.abs(delta),
+                    unit: item.unit
+                });
+                saveData();
+                renderInventoryTable();
+                renderDashboard();
+                renderLogsTable();
+                populateSelectOptions();
+            }
+        }
+
+        function customReStock(id) {
+            const item = inventory.find(i => i.id === id);
+            if(item) {
+                const qtyStr = prompt(`Enter quantity to add for ${item.name} (Current: ${item.stock} ${item.unit}):`, "10");
+                if(!qtyStr) return;
+                const qty = parseInt(qtyStr);
+                if(isNaN(qty) || qty <= 0) {
+                    alert("Please enter a valid number greater than zero.");
+                    return;
+                }
+                item.stock += qty;
+                logs.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    type: 'Stock-In',
+                    item: item.name,
+                    qty: qty,
+                    unit: item.unit
+                });
+                saveData();
+                renderInventoryTable();
+                renderDashboard();
+                renderLogsTable();
+                if(!document.getElementById('view-alerts').classList.contains('hidden')) {
+                    renderAlertsTable();
+                }
+                populateSelectOptions();
+                alert(`Re-stock Successful! Added ${qty} ${item.unit} to ${item.name}.`);
+            }
+        }
+
+        function deleteInventoryItem(id) {
+            if(confirm("Are you sure you want to delete this item from inventory?")) {
+                inventory = inventory.filter(i => i.id !== id);
+                saveData();
+                renderInventoryTable();
+                populateSelectOptions();
+            }
+        }
+
+        // ADD NEW ITEM
+        function handleAddNewItem(e) {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                sku: document.getElementById('add-sku').value.trim(),
+                name: document.getElementById('add-name').value.trim(),
+                category: document.getElementById('add-category').value,
+                stock: parseInt(document.getElementById('add-stock').value),
+                unit: document.getElementById('add-unit').value.trim()
+            };
+            inventory.push(newItem);
+            saveData();
+            closeModal('modal-add-item');
+            renderInventoryTable();
+            e.target.reset();
+        }
+
+        // EDIT MODAL ACTIONS
+        function openEditModal(id) {
+            const item = inventory.find(i => i.id === id);
+            if(!item) return;
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('edit-sku').value = item.sku;
+            document.getElementById('edit-name').value = item.name;
+            document.getElementById('edit-category').value = item.category || 'Plumbing';
+            document.getElementById('edit-stock').value = item.stock;
+            document.getElementById('edit-unit').value = item.unit;
+            openModal('modal-edit-item');
+        }
+
+        function handleSaveEditItem(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-id').value);
+            const index = inventory.findIndex(i => i.id === id);
+            if(index !== -1) {
+                inventory[index].sku = document.getElementById('edit-sku').value.trim();
+                inventory[index].name = document.getElementById('edit-name').value.trim();
+                inventory[index].category = document.getElementById('edit-category').value;
+                inventory[index].stock = parseInt(document.getElementById('edit-stock').value);
+                inventory[index].unit = document.getElementById('edit-unit').value.trim();
+                saveData();
+                closeModal('modal-edit-item');
+                renderInventoryTable();
+            }
+        }
+
+        // POPULATE DROPDOWNS & DATALIST FOR STOCK-IN & STOCK-OUT
+        function populateSelectOptions() {
+            const inDatalist = document.getElementById('stockin-item-options');
+            const outSelect = document.getElementById('stockout-item-select');
+            
+            inDatalist.innerHTML = inventory.map(i => `<option value="${i.name}">${i.sku} | ${i.unit}</option>`).join('');
+            outSelect.innerHTML = inventory.map(i => `<option value="${i.id}">${i.name} (${i.sku}) - Stock: ${i.stock} ${i.unit}</option>`).join('');
+
+            // Render Recent Stock-In Logs
+            const inLogs = logs.filter(l => l.type === 'Stock-In');
+            document.getElementById('stockin-logs-tbody').innerHTML = inLogs.map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 text-xs text-slate-500">${l.timestamp}</td>
+                    <td class="p-3 font-medium">${l.item}</td>
+                    <td class="p-3 font-bold text-emerald-600">+${l.qty}</td>
+                    <td class="p-3 text-xs">${l.unit || '-'}</td>
+                </tr>
+            `).join('');
+
+            // Render Recent Stock-Out Logs
+            const outLogs = logs.filter(l => l.type === 'Stock-Out');
+            document.getElementById('stockout-logs-tbody').innerHTML = outLogs.map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 text-xs text-slate-500">${l.timestamp}</td>
+                    <td class="p-3 font-medium">${l.item}</td>
+                    <td class="p-3 font-bold text-rose-600">-${l.qty}</td>
+                    <td class="p-3 text-xs">${l.ref || '-'}</td>
+                    <td class="p-3 text-xs">${l.person || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function onStockInItemSelect() {
+            const typedVal = document.getElementById('stockin-item-input').value.trim();
+            const matchedItem = inventory.find(i => i.name.toLowerCase() === typedVal.toLowerCase());
+            if(matchedItem) {
+                document.getElementById('stockin-unit').value = matchedItem.unit;
+                if(matchedItem.category) {
+                    document.getElementById('stockin-category').value = matchedItem.category;
+                }
+            }
+        }
+
+        // STOCK-IN HANDLER
+        function handleStockIn(e) {
+            e.preventDefault();
+            const itemName = document.getElementById('stockin-item-input').value.trim();
+            const category = document.getElementById('stockin-category').value;
+            const qty = parseInt(document.getElementById('stockin-qty').value);
+            const unit = document.getElementById('stockin-unit').value.trim();
+
+            let matchedItem = inventory.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+            
+            if(matchedItem) {
+                matchedItem.stock += qty;
+                matchedItem.category = category;
+            } else {
+                matchedItem = {
+                    id: Date.now(),
+                    sku: 'MAT-GEN-' + Math.floor(100 + Math.random() * 900),
+                    name: itemName,
+                    category: category,
+                    stock: qty,
+                    unit: unit
+                };
+                inventory.push(matchedItem);
+            }
+
+            logs.unshift({
+                id: Date.now(),
+                timestamp: new Date().toLocaleString(),
+                type: 'Stock-In',
+                item: matchedItem.name,
+                qty: qty,
+                unit: unit
+            });
+
+            saveData();
+            populateSelectOptions();
+            renderInventoryTable();
+            renderDashboard();
+            renderLogsTable();
+            alert(`Stock-In Recorded! Added ${qty} ${unit} to ${matchedItem.name}.`);
+            e.target.reset();
+        }
+
+        // STOCK-OUT HANDLER
+        function handleStockOut(e) {
+            e.preventDefault();
+            const itemId = parseInt(document.getElementById('stockout-item-select').value);
+            const qty = parseInt(document.getElementById('stockout-qty').value);
+            const site = document.getElementById('stockout-site').value;
+            const requestedBy = document.getElementById('stockout-requestedby').value;
+
+            const item = inventory.find(i => i.id === itemId);
+            if(item) {
+                if(item.stock < qty) {
+                    alert(`Insufficient Stock! Available stock for ${item.name} is only ${item.stock} ${item.unit}.`);
+                    return;
+                }
+                item.stock -= qty;
+                logs.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    type: 'Stock-Out',
+                    item: item.name,
+                    qty: qty,
+                    unit: item.unit,
+                    ref: `Site: ${site}`,
+                    person: requestedBy
+                });
+                saveData();
+                populateSelectOptions();
+                renderInventoryTable();
+                renderDashboard();
+                renderLogsTable();
+                alert(`Stock-Out Issued! Released ${qty} ${item.unit} for ${site}.`);
+                e.target.reset();
+            }
+        }
+
+        // TOOLS SECTION
+        function renderToolsTable() {
+            const tbody = document.getElementById('tools-tbody');
+            if(tools.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No tools or equipment registered.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = tools.map(t => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3.5 font-mono text-xs font-bold text-sky-600">${t.code || 'EQ'}</td>
+                    <td class="p-3.5 font-semibold text-slate-800">${t.name}</td>
+                    <td class="p-3.5 font-bold">${t.total}</td>
+                    <td class="p-3.5 font-bold text-emerald-600">${t.available}</td>
+                    <td class="p-3.5 font-bold text-sky-600">${t.borrowed || 0}</td>
+                    <td class="p-3.5 text-center space-x-1">
+                        <button onclick="borrowTool(${t.id})" ${t.available === 0 ? 'disabled' : ''} class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded text-xs disabled:opacity-40">Borrow</button>
+                        <button onclick="returnTool(${t.id})" ${(t.borrowed || 0) === 0 ? 'disabled' : ''} class="px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded text-xs disabled:opacity-40">Return</button>
+                        <button onclick="deleteTool(${t.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded text-xs border border-rose-200">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function handleAddNewTool(e) {
+            e.preventDefault();
+            const qty = parseInt(document.getElementById('add-tool-qty').value);
+            const newTool = {
+                id: Date.now(),
+                code: document.getElementById('add-tool-code').value.trim(),
+                name: document.getElementById('add-tool-name').value.trim(),
+                total: qty,
+                available: qty,
+                borrowed: 0
+            };
+            tools.push(newTool);
+            saveData();
+            closeModal('modal-add-tool');
+            renderToolsTable();
+            e.target.reset();
+        }
+
+        function borrowTool(id) {
+            const tool = tools.find(t => t.id === id);
+            if(tool && tool.available > 0) {
+                const borrower = prompt("Enter Personnel Name borrowing this tool:");
+                if(!borrower) return;
+                tool.available--;
+                tool.borrowed = (tool.borrowed || 0) + 1;
+                logs.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    type: 'Tool-Borrow',
+                    item: tool.name,
+                    qty: 1,
+                    unit: 'Pc',
+                    ref: `Tool Code: ${tool.code}`,
+                    person: borrower
+                });
+                saveData();
+                renderToolsTable();
+                renderDashboard();
+                renderLogsTable();
+            }
+        }
+
+        function returnTool(id) {
+            const tool = tools.find(t => t.id === id);
+            if(tool && (tool.borrowed || 0) > 0) {
+                tool.available++;
+                tool.borrowed--;
+                logs.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    type: 'Tool-Return',
+                    item: tool.name,
+                    qty: 1,
+                    unit: 'Pc',
+                    ref: `Tool Code: ${tool.code}`,
+                    person: 'Bodega Returned'
+                });
+                saveData();
+                renderToolsTable();
+                renderDashboard();
+                renderLogsTable();
+            }
+        }
+
+        function deleteTool(id) {
+            if(confirm("Are you sure you want to delete this tool/equipment?")) {
+                tools = tools.filter(t => t.id !== id);
+                saveData();
+                renderToolsTable();
+            }
+        }
+
+        // DELETE LOG ENTRY FUNCTION
+        function deleteLogEntry(id) {
+            if(confirm("Are you sure you want to delete this movement log?")) {
+                logs = logs.filter(l => l.id !== id);
+                saveData();
+                renderDashboard();
+                renderLogsTable();
+            }
+        }
+
+        // RENDER FULL LOGS TABLE
+        function renderLogsTable() {
+            const tbody = document.getElementById('all-logs-tbody');
+            if(logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No transaction logs available.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = logs.map(l => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3.5 text-xs font-mono text-slate-500">${l.timestamp}</td>
+                    <td class="p-3.5">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold ${
+                            l.type === 'Stock-In' ? 'bg-emerald-100 text-emerald-700' :
+                            l.type === 'Stock-Out' ? 'bg-rose-100 text-rose-700' : 'bg-sky-100 text-sky-700'
+                        }">${l.type}</span>
+                    </td>
+                    <td class="p-3.5 font-semibold text-slate-800">${l.item}</td>
+                    <td class="p-3.5 font-bold">${l.qty}</td>
+                    <td class="p-3.5 text-xs text-slate-600">${l.unit || '-'}</td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="deleteLogEntry(${l.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded text-xs border border-rose-200">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
