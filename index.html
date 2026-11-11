@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons via CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS CDN for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .print-only { display: none; }
         @media print {
@@ -192,7 +194,7 @@
                         <h2 class="text-2xl font-bold text-slate-800">Master Construction Inventory</h2>
                         <p class="text-slate-500 text-sm">Full stock list of warehouse construction materials.</p>
                     </div>
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 flex-wrap gap-y-2">
                         <select id="inv-category-filter" onchange="renderInventoryTable()" class="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
                             <option value="ALL">All Categories</option>
                             <option value="Plumbing">Plumbing</option>
@@ -202,11 +204,18 @@
                             <option value="Painting">Painting</option>
                         </select>
 
-                        <button onclick="openAddItemModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm transition">
-                            <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> + New Item
+                        <button onclick="openAddItemModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3.5 py-2 rounded-lg text-sm flex items-center shadow-sm transition">
+                            <i data-lucide="plus-circle" class="w-4 h-4 mr-1.5"></i> + New Item
                         </button>
-                        <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3.5 py-2 rounded-lg text-sm flex items-center transition">
-                            <i data-lucide="printer" class="w-4 h-4 mr-1.5"></i> Print List
+                        
+                        <!-- EXCEL BUTTON -->
+                        <button onclick="exportInventoryToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-sm flex items-center shadow-sm transition">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export Excel
+                        </button>
+
+                        <!-- PDF / PRINT BUTTON -->
+                        <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3 py-2 rounded-lg text-sm flex items-center transition">
+                            <i data-lucide="printer" class="w-4 h-4 mr-1.5"></i> Print / PDF
                         </button>
                     </div>
                 </div>
@@ -403,9 +412,14 @@
                         <h2 class="text-2xl font-bold text-slate-800">Tools & Reusable Equipment Tracker</h2>
                         <p class="text-slate-500 text-sm">Monitor borrowed power tools, scaffolding, and machinery.</p>
                     </div>
-                    <button onclick="openModal('modal-add-tool')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm">
-                        <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Register New Tool
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportToolsToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-sm flex items-center shadow-sm transition">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export Excel
+                        </button>
+                        <button onclick="openModal('modal-add-tool')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm">
+                            <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Register New Tool
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -437,9 +451,14 @@
                         <h2 class="text-2xl font-bold text-slate-800">Audit & Transaction Logs</h2>
                         <p class="text-slate-500 text-sm">Complete history log of all Stock-In, Stock-Out, and Tool transactions.</p>
                     </div>
-                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm">
-                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Audit Log
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportLogsToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-sm flex items-center shadow-sm transition">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export Excel
+                        </button>
+                        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center shadow-sm">
+                            <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Audit Log
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -694,6 +713,73 @@
         }
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // EXCEL EXPORT LOGIC (SheetJS)
+        function exportInventoryToExcel() {
+            if(typeof XLSX === 'undefined') {
+                alert('SheetJS library is loading, please try again in a moment.');
+                return;
+            }
+            const dataToExport = inventory.map(item => ({
+                'SKU / Code': item.sku,
+                'Item Description': item.name,
+                'Category': item.category || 'General',
+                'Stock Quantity': item.stock,
+                'Unit of Measure': item.unit
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Master Inventory");
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Bodega_Master_Inventory_${today}.xlsx`);
+        }
+
+        function exportToolsToExcel() {
+            if(typeof XLSX === 'undefined') {
+                alert('SheetJS library is loading, please try again in a moment.');
+                return;
+            }
+            const dataToExport = tools.map(t => ({
+                'Tool Code': t.code || 'EQ',
+                'Equipment Name': t.name,
+                'Total Quantity': t.total,
+                'Name / Borrower': t.borrower || '-',
+                'Site Location': t.site || '-',
+                'Borrowed Out': t.borrowed || 0
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Tools and Equipment");
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Bodega_Tools_Equipment_${today}.xlsx`);
+        }
+
+        function exportLogsToExcel() {
+            if(typeof XLSX === 'undefined') {
+                alert('SheetJS library is loading, please try again in a moment.');
+                return;
+            }
+            const dataToExport = logs.map(l => ({
+                'Timestamp': l.timestamp,
+                'Action Type': l.type,
+                'Item Name': l.item,
+                'Quantity': l.qty,
+                'Unit': l.unit || '-',
+                'Reference / Site': l.ref || '-',
+                'Person In-Charge': l.person || '-'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Bodega_Audit_Logs_${today}.xlsx`);
+        }
 
         // DASHBOARD RENDER
         function renderDashboard() {
