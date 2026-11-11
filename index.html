@@ -193,7 +193,6 @@
                         <p class="text-slate-500 text-sm">Full stock list of warehouse construction materials.</p>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <!-- CATEGORY FILTER DROPDOWN IN MASTER INVENTORY HEADER -->
                         <select id="inv-category-filter" onchange="renderInventoryTable()" class="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
                             <option value="ALL">All Categories</option>
                             <option value="Plumbing">Plumbing</option>
@@ -417,7 +416,8 @@
                                     <th class="p-3.5">Tool Code</th>
                                     <th class="p-3.5">Equipment Name / Spec</th>
                                     <th class="p-3.5">Total Quantity</th>
-                                    <th class="p-3.5">Available In Bodega</th>
+                                    <th class="p-3.5">Name / Borrower</th>
+                                    <th class="p-3.5">Site Location</th>
                                     <th class="p-3.5">Borrowed Out</th>
                                     <th class="p-3.5 text-center">Actions</th>
                                 </tr>
@@ -567,6 +567,16 @@
                     <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Equipment Name</label>
                     <input type="text" id="add-tool-name" required placeholder="e.g. Heavy Duty Demolition Jackhammer" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Borrower / Person In-Charge</label>
+                        <input type="text" id="add-tool-borrower" placeholder="e.g. Juan Cruz" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Assigned Project Site</label>
+                        <input type="text" id="add-tool-site" placeholder="e.g. Site A - Block 2" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
+                </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Total Quantity Owned</label>
                     <input type="number" min="1" id="add-tool-qty" required value="1" class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
@@ -589,8 +599,8 @@
         ];
 
         const defaultTools = [
-            { id: 1, code: 'EQ-01', name: 'H-Frame Scaffolding Set', total: 50, available: 30, borrowed: 20 },
-            { id: 2, code: 'EQ-02', name: 'Demolition Breaker / Jackhammer', total: 4, available: 2, borrowed: 2 }
+            { id: 1, code: 'EQ-01', name: 'H-Frame Scaffolding Set', borrower: 'Engr. Santos', site: 'Site A - Block 4', total: 50, borrowed: 20 },
+            { id: 2, code: 'EQ-02', name: 'Demolition Breaker / Jackhammer', borrower: 'Foreman Ace', site: 'Site B - Main', total: 4, borrowed: 2 }
         ];
 
         const defaultLogs = [
@@ -1022,7 +1032,7 @@
         function renderToolsTable() {
             const tbody = document.getElementById('tools-tbody');
             if(tools.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No tools or equipment registered.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No tools or equipment registered.</td></tr>`;
                 return;
             }
             tbody.innerHTML = tools.map(t => `
@@ -1030,7 +1040,8 @@
                     <td class="p-3.5 font-mono text-xs font-bold text-sky-600">${t.code || 'EQ'}</td>
                     <td class="p-3.5 font-semibold text-slate-800">${t.name}</td>
                     <td class="p-3.5 font-bold">${t.total}</td>
-                    <td class="p-3.5 font-bold text-emerald-600">${t.available}</td>
+                    <td class="p-3.5 font-semibold text-slate-700">${t.borrower || '-'}</td>
+                    <td class="p-3.5 text-xs text-slate-600">${t.site || '-'}</td>
                     <td class="p-3.5 font-bold text-sky-600">${t.borrowed || 0}</td>
                     <td class="p-3.5 text-center space-x-1">
                         <button onclick="borrowTool(${t.id})" ${t.available === 0 ? 'disabled' : ''} class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded text-xs disabled:opacity-40">Borrow</button>
@@ -1044,13 +1055,17 @@
         function handleAddNewTool(e) {
             e.preventDefault();
             const qty = parseInt(document.getElementById('add-tool-qty').value);
+            const borrower = document.getElementById('add-tool-borrower').value.trim();
+            const site = document.getElementById('add-tool-site').value.trim();
+            
             const newTool = {
                 id: Date.now(),
                 code: document.getElementById('add-tool-code').value.trim(),
                 name: document.getElementById('add-tool-name').value.trim(),
+                borrower: borrower,
+                site: site,
                 total: qty,
-                available: qty,
-                borrowed: 0
+                borrowed: borrower ? qty : 0
             };
             tools.push(newTool);
             saveData();
@@ -1061,10 +1076,12 @@
 
         function borrowTool(id) {
             const tool = tools.find(t => t.id === id);
-            if(tool && tool.available > 0) {
-                const borrower = prompt("Enter Personnel Name borrowing this tool:");
+            if(tool) {
+                const borrower = prompt("Enter Personnel Name borrowing this tool:", tool.borrower || "");
                 if(!borrower) return;
-                tool.available--;
+                const site = prompt("Enter Site Location:", tool.site || "");
+                tool.borrower = borrower;
+                tool.site = site || tool.site;
                 tool.borrowed = (tool.borrowed || 0) + 1;
                 logs.unshift({
                     id: Date.now(),
@@ -1073,7 +1090,7 @@
                     item: tool.name,
                     qty: 1,
                     unit: 'Pc',
-                    ref: `Tool Code: ${tool.code}`,
+                    ref: `Tool Code: ${tool.code} | Site: ${tool.site || 'N/A'}`,
                     person: borrower
                 });
                 saveData();
@@ -1086,8 +1103,11 @@
         function returnTool(id) {
             const tool = tools.find(t => t.id === id);
             if(tool && (tool.borrowed || 0) > 0) {
-                tool.available++;
                 tool.borrowed--;
+                if(tool.borrowed === 0) {
+                    tool.borrower = '';
+                    tool.site = '';
+                }
                 logs.unshift({
                     id: Date.now(),
                     timestamp: new Date().toLocaleString(),
